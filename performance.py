@@ -8,7 +8,6 @@ def zero_one_loss(y: pd.Series, y_pred: np.ndarray) -> float:
 
     y: pd.Series - true values
     y_pred: np.ndarray - predicted values
-    true: Any - the class of interest
 
     return: float - zero one loss
     '''
@@ -20,7 +19,6 @@ def accuracy(y: pd.Series, y_pred: np.ndarray) -> float:
 
     y: pd.Series - true values
     y_pred: np.ndarray - predicted values
-    true: Any - the class of interest
 
     return: float - accuracy
     '''

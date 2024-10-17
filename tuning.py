@@ -48,7 +48,6 @@ def evaluate_model(X_train: pd.DataFrame, y_train: pd.Series, X_test: pd.DataFra
     model = model_class(**params)
     model.fit(X_train, y_train)
     loss = model.zero_one_loss(X_test, y_test)
-    print(f'Params: {params}, Loss: {loss}')
     return loss
 
 def find_best_model(X: pd.DataFrame, y: pd.Series, results: List[Tuple[float, Dict[str, Any]]],  model_class: Union[DecisionTree, RandomForest]) -> Tuple[Union[DecisionTree, RandomForest], Dict[str, Any], float]:
@@ -90,6 +89,8 @@ def hyperparameter_tuning(X: pd.DataFrame, y: pd.Series, param_grid: Dict[str, L
         delayed(evaluate_model)(X_train, y_train, X_val, y_val, dict(zip(param_grid.keys(), params)), model_class) for params in param_combinations
     )
     results = list(zip(results, [dict(zip(param_grid.keys(), params)) for params in param_combinations])) 
+    for result in results:
+        print("Params: ", result[1], "Loss: ", result[0])
     return find_best_model(X, y, results, model_class)
 
 
@@ -141,8 +142,9 @@ def cross_validation(X: pd.DataFrame, y: pd.Series, cv: int, params: Dict[str, A
         y_train, y_test = y.iloc[train_indices], y.iloc[test_indices]
         loss = evaluate_model(X_train, y_train, X_test, y_test, params, model_class)
         losses.append(loss)
-
-    return np.mean(losses)
+    mean_loss = np.mean(losses)
+    print("Params: ", params, "CV Loss: ", mean_loss)
+    return mean_loss
 
 def hyperparameter_tuning_cv(X: pd.DataFrame, y: pd.Series, param_grid: Dict[str, List], model: str = 'decision_tree',
                              cv: int = 5, n_jobs: int = -1) -> Tuple[Union[DecisionTree, RandomForest], Dict[str, Any], float]:

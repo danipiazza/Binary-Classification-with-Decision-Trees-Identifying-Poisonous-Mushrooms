@@ -1,3 +1,5 @@
+# Binary Classification with Decision Trees: Identifying Poisonous Mushrooms
+
 The aim of this project is to build a binary decision tree from scratch and then test it on a mushroom dataset. The goal is to predict whether a mushroom is poisonous or edible based on numerous attributes.
 
 The first step was to analysed the data, divide it into training and test sets, before proceeding with a data cleaning phase.

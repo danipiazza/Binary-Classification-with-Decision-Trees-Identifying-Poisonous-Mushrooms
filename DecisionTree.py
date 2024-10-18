@@ -59,12 +59,13 @@ class Node:
         return f'Class: {self.value}'
 
 class DecisionTree:
-    def __init__(self, max_depth: int = None, min_samples_split: int = 2, min_impurity_decrease: float = .0, criterion: str = 'gini', n_jobs: int = -1):
+    def __init__(self, max_depth: int = None, min_samples_split: int = 2, min_impurity_decrease: float = .0, criterion: str = 'gini', max_features: str = None, n_jobs: int = -1):
         '''
         max_depth: int, default=None - The maximum depth of the tree. If None, then nodes are expanded until all leaves are pure or until all leaves contain less than min_samples_split samples.
         min_samples_split: int, default=2 - The minimum number of samples required to split an internal node.
         min_impurity_decrease: float, default=0.0 - A node will be split if this split induces a decrease of the impurity greater than or equal to this value.
         criterion: str, default='gini' - The function to measure the quality of a split (either 'gini', 'scaled_entropy' or 'squared')
+        max_features: str, default=None - The number of features to consider when looking for the best split. Options are None (all features), 'sqrt' (square root of the number of features), 'log2' (log base 2 of the number of features).
         n_jobs: int, default=-1 - The number of jobs to run in parallel. -1 means using all processors. 
         '''
         if max_depth is not None and max_depth < 1:
@@ -78,10 +79,14 @@ class DecisionTree:
         
         if criterion not in ['gini', 'scaled_entropy', 'squared']:
             raise ValueError("Unsupported criterion. Use 'gini', 'scaled_entropy', or 'squared'.")
+        
+        if max_features is not None and max_features not in ['sqrt', 'log2']:
+            raise ValueError("Unsupported max_features. Use None, 'sqrt', or 'log2'.")
         self.criterion = criterion
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
         self.min_impurity_decrease = min_impurity_decrease
+        self.max_features = max_features
         self.n_jobs = n_jobs
         self.root = None
         self.min_gain = np.inf
@@ -163,8 +168,17 @@ class DecisionTree:
         Returns: Tuple[Optional[int],Optional[int], Optional[Any], bool] - The index of the best gain, the index of the best feature, the best threshold, and whether the feature is categorical.
         '''
         # I use joblib to parallelize the search for the best split for each feature otherwise it would be too slow
+        if self.max_features is not None:
+            if self.max_features == 'sqrt':
+                n_feature = int(np.sqrt(self.n_features))
+            elif self.max_features == 'log2':
+                n_feature = int(np.log2(self.n_features))
+            feature = np.random.choice(self.n_features, n_feature, replace=False)
+        else:
+            feature = range(self.n_features)
+            
         results = Parallel(n_jobs=self.n_jobs)(
-            delayed(self._best_split_for_feature)(X, y, feature) for feature in range(self.n_features)
+            delayed(self._best_split_for_feature)(X, y, f) for f in feature
             )
         best_gain, best_feature, best_thr, is_categorical, left_idxs, right_idxs = max(results, key=lambda x: x[0]) # Find the best split among all features
         return (best_gain, best_feature, best_thr, is_categorical, left_idxs, right_idxs) if best_gain > -np.inf else (None, None, None, False, [], []) # Return None if no split is found (i.e. all features are constant)

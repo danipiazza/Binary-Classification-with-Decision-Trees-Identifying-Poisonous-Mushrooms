@@ -43,25 +43,6 @@ class RandomForest:
         indices = np.random.choice(n_samples, n_samples, replace=True)
         return X.iloc[indices], y.iloc[indices]
 
-    def _random_subset_of_features(self, X: pd.DataFrame) -> pd.DataFrame:
-        '''
-        Create a random subset of features.
-
-        X: pd.DataFrame - The input samples.
-
-        return: np.ndarray - The random subset of features.
-        '''
-        n_features = X.shape[1]
-        if self.max_features is None:
-            max_features = n_features
-        elif self.max_features == 'sqrt':
-            max_features = int(np.sqrt(n_features))
-        elif self.max_features == 'log2':
-            max_features = int(np.log2(n_features))
-
-        features_indices = np.random.choice(n_features, max_features, replace=False)
-        return X.iloc[:, features_indices]
-    
     def fit(self, X: pd.DataFrame, y: pd.Series) -> None:
         '''
         Fit the random forest model.
@@ -71,11 +52,10 @@ class RandomForest:
         '''
         def _build_tree() -> Tuple[DecisionTree, pd.Index]:
             X_bootstrap, y_bootstrap = self._bootstrap_sample(X, y)
-            X_subset = self._random_subset_of_features(X_bootstrap)
             tree = DecisionTree(max_depth=self.max_depth, min_samples_split=self.min_samples_split, 
-                                min_impurity_decrease=self.min_impurity_decrease, criterion=self.criterion)
-            tree.fit(X_subset, y_bootstrap)
-            return tree, X_subset.columns
+                                min_impurity_decrease=self.min_impurity_decrease, criterion=self.criterion, max_features=self.max_features)
+            tree.fit(X_bootstrap, y_bootstrap)
+            return tree, X_bootstrap.columns
         
         self.trees = Parallel(n_jobs=self.n_jobs)(
             delayed(_build_tree)() for _ in range(self.n_trees)
@@ -91,8 +71,6 @@ class RandomForest:
         return: np.ndarray - The predicted target values.
         '''
         tree_predictions = np.array([tree.predict(X[features]) for tree, features in self.trees])
-        #majority_votes = [Counter(tree_predictions[:, i]).most_common(1)[0][0] for i in range(X.shape[0])] 
-        # Without external libraries
         def most_common(arr):
             values, counts = np.unique(arr, return_counts=True)
             return values[np.argmax(counts)]

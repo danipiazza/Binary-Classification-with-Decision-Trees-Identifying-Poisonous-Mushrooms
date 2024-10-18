@@ -70,19 +70,18 @@ def find_best_model(X: pd.DataFrame, y: pd.Series, results: List[Tuple[float, Di
 
 
 def hyperparameter_tuning(X: pd.DataFrame, y: pd.Series, param_grid: Dict[str, List], 
-                          model: str = 'decision_tree', n_jobs: int = -1) -> Tuple[Union[DecisionTree, RandomForest], Dict[str, Any], float]:
+                         model_class: Union[DecisionTree,RandomForest] = DecisionTree, n_jobs: int = -1) -> Tuple[Union[DecisionTree, RandomForest], Dict[str, Any], float]:
     '''
     Finds the best model using the hyperparameter grid search.
 
     X: pd.DataFrame - The input samples.
     y: pd.Series - The target values.
     param_grid: Dict[str, List] - The hyperparameter grid to search over.
-    model: str, default='decision_tree' - The type of the model. It can be 'decision_tree' or 'random_forest'.
+    model_class: Union[DecisionTree, RandomForest], default=DecisionTree - The model class.
     n_jobs: int, default=-1 - The number of jobs to run in parallel (-1 means using all processors).
 
     Returns: Tuple[Union[DecisionTree, RandomForest], Dict[str, Any], float] - The best model, the best hyperparameters, and the best zero-one loss.
     '''
-    model_class = DecisionTree if model == 'decision_tree' else RandomForest
     param_combinations = list(itertools.product(*param_grid.values()))
     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2)
     results = Parallel(n_jobs=n_jobs)(
@@ -146,21 +145,20 @@ def cross_validation(X: pd.DataFrame, y: pd.Series, cv: int, params: Dict[str, A
     print("Params: ", params, "CV Loss: ", mean_loss)
     return mean_loss
 
-def hyperparameter_tuning_cv(X: pd.DataFrame, y: pd.Series, param_grid: Dict[str, List], model: str = 'decision_tree',
-                             cv: int = 5, n_jobs: int = -1) -> Tuple[Union[DecisionTree, RandomForest], Dict[str, Any], float]:
+def hyperparameter_tuning_cv(X: pd.DataFrame, y: pd.Series, param_grid: Dict[str, List], cv: int = 5, 
+                             model_class: Union[DecisionTree,RandomForest] = DecisionTree, n_jobs: int = -1) -> Tuple[Union[DecisionTree, RandomForest], Dict[str, Any], float]:
     '''
     Finds the best model using the hyperparameter grid search and cross-validation.
 
     X: pd.DataFrame - The input samples.
     y: pd.Series - The target values.
     param_grid: Dict[str, List] - The hyperparameter grid to search over.
-    model: str, default='decision_tree' - The type of the model. It can be 'decision_tree' or 'random_forest'.
     cv: int, default=5 - The number of splits for cross-validation.
+    model_class: Union[DecisionTree, RandomForest], default=DecisionTree - The model class.
     n_jobs: int, default=-1 - The number of jobs to run in parallel (-1 means using all processors).
 
     Returns: Tuple[Union[DecisionTree, RandomForest], Dict[str, Any], float] - The best model, the best hyperparameters, and the best zero-one loss.
     '''    
-    model_class = DecisionTree if model == 'decision_tree' else RandomForest
     param_combinations = list(itertools.product(*param_grid.values()))
     
     results = Parallel(n_jobs=n_jobs)(
